@@ -170,6 +170,69 @@ Vercel (confirmado con `curl -I` mirando el header `x-vercel-id`), aunque el
 sitio fuera estatico. El criterio correcto no es "tiene build", es "tiene
 deploy".
 
+## Decision 7: `AGENTS.md` tambien documenta decisiones y no-goals
+
+**Encontrado auditando repos personales del equipo (no un bug, una mejora
+real):** dos proyectos distintos, sin coordinarse entre si, llegaron
+independientemente al mismo patron: una seccion numerada de "decisiones
+arquitectonicas" con el *por que* (ej. "no AWS: costos, se opto por VPS"),
+y una seccion explicita de "no-goals" (que NO se va a construir, ej. "no
+Kubernetes, no app movil"). Ninguna de las dos vive en un ADR separado —
+van directo en el `AGENTS.md`, mas liviano.
+
+**Solucion aplicada:** ambos templates (`static-site/AGENTS.md` y
+`node-vite-app/AGENTS.md`) tienen ahora esas dos secciones como comentarios
+placeholder, entre `Stack` y `Flujo de trabajo`.
+
+## Decision 8: coverage se exige en CI, no solo se mide
+
+**Encontrado en dos auditorias independientes:** correr `vitest run` (o
+`pytest`) sin un flag de umbral mide la cobertura pero no la exige — un PR
+puede bajarla a 0% y el build sigue verde. El numero solo sirve si un
+descenso real hace fallar CI.
+
+**Solucion aplicada:** `templates/node-vite-app/NOTES.md` documenta el flag
+de umbral (`--coverage.thresholds.lines=...` en Vitest, o
+`--cov-fail-under=...` en pytest) como parte del script de test, no como
+paso separado opcional.
+
+## Decision 9: patrones para repos mas grandes — documentados, no construidos
+
+**Criterio:** no se agrega infraestructura que ningun repo actual necesita
+(regla de "no premature abstraction"), pero se documenta aca para no
+redescubrirla cuando aparezca el caso real:
+
+- **CI con gate que se auto-saltea si falta el manifest** (visto en un repo
+  personal del equipo): cada job de CI chequea si existe su manifiesto
+  (`package.json`, `pyproject.toml`, `docker-compose.yml`) antes de correr
+  pasos reales; si falta, el job sale verde via `if`. Permite marcar el
+  check como "required" en branch protection desde el dia 0, antes de que
+  exista el tooling — util para un repo que va a crecer por partes.
+- **Docker multi-stage con usuario no-root** (`base` -> `development`/
+  `build`/`production`, `COPY --from=build --chown=...`): para el dia que
+  algun backend propio se dockerice.
+- **CI de monorepo con `defaults.run.working-directory` +
+  `cache-dependency-path` por subcarpeta**: para un repo con frontend y
+  backend separados sin un tool de monorepo (Turborepo/Nx) de por medio.
+- **Deploy que verifica liveness real** (poll a `/health`/`/ready` con
+  retry, no solo "el contenedor esta corriendo"): para cualquier repo que
+  se auto-hostee (Docker/VPS) en vez de usar un deploy gestionado como
+  Vercel — ahi "Vercel: success" no aplica, hace falta verificar el proceso
+  real.
+- **Convencion dry-run/execute en scripts de mantenimiento** (ej.
+  `ops:cleanup-branches` vs `ops:cleanup-branches:execute`): mismo
+  principio de "nunca destructivo sin preview" que ya aplicamos en este
+  mismo playbook (ver Decision 5) — nombrar los scripts de forma que el
+  dry-run sea el default y la ejecucion real requiera un flag explicito.
+- **`docs/` como carpeta separada** de `README.md`/`AGENTS.md` para
+  documentacion pesada (manual de instalacion, modelo de base de datos,
+  estructura del proyecto) — solo tiene sentido en un proyecto grande, no
+  en los sitios estaticos/Vite chicos que armamos hasta ahora.
+- **CodeQL** (SAST nativo de GitHub, gratis): confirmado que, igual que
+  branch protection nativa, requiere que el repo sea **publico** — no
+  aplica a los repos privados del equipo hoy, pero si aplica a este mismo
+  repo (`octalitycl/config`) si en algun momento se quiere activar.
+
 ## Cosas que hay que verificar, no asumir, en cada repo nuevo
 
 1. `gh api repos/<owner>/<repo>/collaborators --jq '.[].login'` — no asumir
