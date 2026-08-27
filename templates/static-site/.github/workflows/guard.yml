@@ -51,9 +51,15 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         run: |
           echo "Head: $HEAD_REF  Base: $BASE_REF"
-          if [ "$BASE_REF" = "main" ] && [ "$HEAD_REF" = "dev" ]; then
-            echo "Promocion dev -> main permitida."
-            exit 0
+          if [ "$BASE_REF" = "main" ]; then
+            if [ "$HEAD_REF" = "dev" ]; then
+              echo "Promocion dev -> main permitida."
+              exit 0
+            else
+              echo "::error::PRs a main solo se aceptan desde dev (promocion explicita)."
+              echo "Este PR es '$HEAD_REF' -> 'main'; debe apuntar a 'dev'."
+              exit 1
+            fi
           fi
           if echo "$HEAD_REF" | grep -q '^dependabot/'; then
             echo "Rama de Dependabot exenta de la convencion de nombres."
@@ -76,7 +82,7 @@ jobs:
             echo "::error::El titulo del PR no debe contener 'Co-authored-by' (rastro de IA bloqueado)."
             exit 1
           fi
-          if ! echo "$PR_TITLE" | grep -Eq '^(feat|fix|chore|docs|style|refactor|perf|test|build|ci)(\(.+\))?: .+'; then
+          if ! echo "$PR_TITLE" | grep -Eq '^(feat|fix|chore|docs|style|refactor|perf|test|build|ci)(\(.+\))?!?: .+'; then
             echo "::error::Titulo de PR invalido: '$PR_TITLE'"
             echo "Formato: type(scope): descripcion — type en {feat,fix,chore,docs,style,refactor,perf,test,build,ci}"
             exit 1
@@ -128,6 +134,20 @@ jobs:
             exit 1
           fi
           echo "No Co-authored-by found — OK"
+
+      # f) Aviso temprano (no autoritativo): si quien ABRIO el PR de promocion
+      #    dev->main no es el owner, probablemente alguien mas tenga que
+      #    pedirle que lo mergee. El check real, autoritativo, es el job
+      #    ownership-audit de abajo (valida quien MERGEO, no quien abrio).
+      - name: Aviso temprano de ownership
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          echo "Base: $BASE_REF  Actor que abrio/actualizo el PR: $ACTOR"
+          if [ "$BASE_REF" = "main" ] && [ "$ACTOR" != "{{OWNER}}" ]; then
+            echo "::warning::Este PR va a main y lo abrio '$ACTOR', no '{{OWNER}}'. Recorda que solo {{OWNER}} puede mergearlo — el job ownership-audit lo va a auditar despues del merge."
+          fi
 
   ownership-audit:
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.base_ref == 'main'
