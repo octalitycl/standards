@@ -28,6 +28,21 @@ Si el proyecto no tiene test runner todavia: configurarlo ANTES de escribir
 codigo de produccion. No es opcional — ver `rules/common/testing.md` si el
 equipo usa Claude Code, o el equivalente en las normas internas.
 
+## Coverage: exigirlo en CI, no solo medirlo
+
+Confirmado en dos auditorias independientes de repos reales del equipo: medir
+cobertura sin que falle el build no sirve de piso minimo, solo de metrica
+decorativa. Agregar el flag de umbral al comando de test, no solo dejar que
+`vitest run` reporte el numero:
+
+```json
+"test": "vitest run --coverage --coverage.thresholds.lines=70 --coverage.thresholds.branches=60"
+```
+
+O equivalente en `vitest.config.ts` (`test.coverage.thresholds`). El numero
+exacto lo define cada proyecto; lo que no es opcional es que un PR que baja
+la cobertura por debajo del piso falle CI, no solo lo reporte.
+
 ## Dependencias devDependencies minimas para que `guard.yml`/hooks funcionen
 
 ```

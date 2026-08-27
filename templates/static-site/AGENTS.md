@@ -10,6 +10,21 @@ Sitio estatico (HTML + CSS + JS vanilla, sin build, sin dependencias).
      hash, un generador de datos demo), y si el panel/app corre 100% en el
      navegador (localStorage) o tiene backend real. -->
 
+## Decisiones arquitectonicas
+
+<!-- Numerar las decisiones grandes con el PORQUE, no solo el que.
+     Ejemplo real (de un proyecto personal de un integrante del equipo):
+     "1. No AWS: costos, se opto por VPS + Dokploy."
+     Mas liviano que un ADR por archivo — sirve para que alguien nuevo
+     entienda el razonamiento sin tener que preguntar. -->
+
+## Fuera de alcance (no-goals)
+
+<!-- Que NO se va a construir en este repo, explicito, para que nadie lo
+     proponga en un PR pensando que es una omision. Ejemplo real (de otro
+     proyecto personal del equipo): "No Kubernetes, no microservicios, no
+     deep learning, no app movil." -->
+
 No hay `package.json`, ESLint, tests ni pipeline de build: no se agrega
 tooling de Node solo para tenerlo si el proyecto no lo necesita.
 

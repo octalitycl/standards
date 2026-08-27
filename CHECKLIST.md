@@ -71,6 +71,17 @@ grep -rl '{{' ~/Developer/<repo>/.github ~/Developer/<repo>/AGENTS.md 2>/dev/nul
 # ciego sobre todo el repo, puede tocar archivos que no son templates
 ```
 
+## 3.5. Verificar que no quedo ningun placeholder sin reemplazar
+
+Anti-patron real encontrado en una auditoria: un `package.json` quedo con
+`your-org` literal, boilerplate sin personalizar, commiteado tal cual.
+
+```bash
+grep -rn '{{' ~/Developer/<repo>/ --include='*' 2>/dev/null | grep -v '\.git/'
+grep -rniE 'your-org|your-name|example\.com|changeme' ~/Developer/<repo>/ --include='*' 2>/dev/null | grep -v '\.git/'
+# sin output en ninguno de los dos = limpio para commitear
+```
+
 ## 4. Primer PR: setup completo
 
 ```bash
