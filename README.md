@@ -15,7 +15,7 @@ para el proximo repo de la empresa, no un archivo mas de documentacion suelta.
 |---|---|
 | [`PLAYBOOK.md`](./PLAYBOOK.md) | Que se hizo, por que, y que limitaciones reales de plan (GitHub Free, Vercel Hobby) obligaron cada decision. Historial de los problemas encontrados y como se resolvieron. |
 | [`CHECKLIST.md`](./CHECKLIST.md) | Pasos concretos, con comandos, para dejar un repo nuevo configurado igual que los anteriores. |
-| [`templates/common/`](./templates/common/) | Archivos que van igual en CUALQUIER repo de la empresa (CODEOWNERS, CONTRIBUTING, issue templates, auto-assign, labeler, dependabot base, SECURITY.md). |
+| [`templates/common/`](./templates/common/) | Archivos que van igual en CUALQUIER repo de la empresa (CODEOWNERS, CONTRIBUTING, issue templates, auto-assign, labeler, dependabot base, SECURITY.md, y 4 skills de Claude Code agnosticas al stack en `.claude/skills/`). |
 | [`templates/static-site/`](./templates/static-site/) | Para sitios HTML/CSS/JS sin build: `AGENTS.md`, `guard.yml` sin depender de Node, `vercel.json`. |
 | [`templates/node-vite-app/`](./templates/node-vite-app/) | Para apps con `package.json`/build: ESLint, Prettier, Husky+commitlint, Vitest, `guard.yml`/`ci.yml` con npm. |
 

@@ -233,6 +233,33 @@ redescubrirla cuando aparezca el caso real:
   aplica a los repos privados del equipo hoy, pero si aplica a este mismo
   repo (`octalitycl/config`) si en algun momento se quiere activar.
 
+## Decision 10: skills de Claude Code repo-locales, no solo globales
+
+**Encontrado auditando repos personales del equipo:** las skills de Claude
+Code pueden vivir en `~/.claude/skills/` (global, solo en la maquina de
+quien las configuro) o en `.claude/skills/<nombre>/SKILL.md` dentro del
+propio repo (viaja con el codigo, cualquiera que clone el repo la tiene,
+sin instalar nada aparte). Para un equipo de mas de una persona, la version
+repo-local es la que realmente garantiza consistencia — una skill global no
+la tiene automaticamente quien clona el repo en otra maquina.
+
+**Tambien encontrado:** un repo tenia las mismas skills duplicadas en
+`.claude/skills/` y `.agents/skills/`, pero `.claude/skills/<nombre>` era
+en realidad un **symlink** a `../../.agents/skills/<nombre>` — un solo
+archivo real, leible por Claude Code (`.claude/`) y por otra herramienta de
+agentes (`.agents/`) sin duplicar contenido. Util el dia que el equipo use
+mas de una herramienta de agentes sobre el mismo repo; no se implementa
+ahora porque solo usamos Claude Code.
+
+**Solucion aplicada:** `templates/common/.claude/skills/` trae 4 skills
+agnosticas al stack (`branch-pr`, `commit-hygiene`, `docs-alignment`,
+`issue-creation`), adaptadas de una skill real de un proyecto personal del
+equipo pero corregidas para no contradecir nuestras propias reglas — la
+version original asumia squash-merge como metodo de merge, que es
+exactamente lo que tenemos prohibido (ver Decision 2). `testing-coverage`
+(Vitest) vive solo en `templates/node-vite-app/`, no en `static-site`, que
+no tiene tests automatizados por diseño.
+
 ## Cosas que hay que verificar, no asumir, en cada repo nuevo
 
 1. `gh api repos/<owner>/<repo>/collaborators --jq '.[].login'` — no asumir

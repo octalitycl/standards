@@ -87,7 +87,7 @@ jobs:
       - name: Validate commit messages
         run: |
           base="origin/${{ github.base_ref }}"
-          pattern='^(feat|fix|chore|docs|style|refactor|perf|test|build|ci|revert)(\(.+\))?!?: .+'
+          pattern='^(feat|fix|chore|docs|style|refactor|perf|test|build|ci)(\(.+\))?!?: .+'
           bad=0
           for sha in $(git log "$base"..HEAD --no-merges --format="%H"); do
             subject=$(git log -1 --pretty=%s "$sha")

@@ -52,12 +52,19 @@ Si NO hay deploy que proteger, saltar la rama `dev`: trabajar directo contra
 
 ```bash
 cp -r templates/common/.github ~/Developer/<repo>/.github
+cp -r templates/common/.claude ~/Developer/<repo>/.claude
 cp templates/common/SECURITY.md ~/Developer/<repo>/SECURITY.md
 
 # segun el stack (ver README.md de este repo):
 cp -r templates/static-site/. ~/Developer/<repo>/      # o
 cp -r templates/node-vite-app/. ~/Developer/<repo>/
 ```
+
+`templates/common/.claude/skills/` trae 4 skills de Claude Code (workflow,
+agnosticas al stack): `branch-pr`, `commit-hygiene`, `docs-alignment`,
+`issue-creation`. `templates/node-vite-app/` suma ademas `testing-coverage`
+(adaptada a Vitest — no aplica a `static-site`, que no tiene tests
+automatizados).
 
 Reemplazar en todos los archivos copiados:
 - `{{REPO_NAME}}` -> nombre real del repo
