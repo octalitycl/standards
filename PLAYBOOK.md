@@ -260,6 +260,29 @@ exactamente lo que tenemos prohibido (ver Decision 2). `testing-coverage`
 (Vitest) vive solo en `templates/node-vite-app/`, no en `static-site`, que
 no tiene tests automatizados por diseño.
 
+## Decision 11: Node 24 / checkout v6 — documentado, no migrado aun
+
+**Encontrado verificando el SHA de `gitleaks-action@v3` (v3.0.0 -> `e0c47f4`):**
+las notas oficiales de esa release piden migrar `gitleaks-action` a runtime
+Node 24 y, junto con eso, actualizar `actions/checkout` a `@v6`. Hoy
+`templates/*/guard.yml` y `templates/*/ci.yml` usan `actions/checkout@v4` y
+`actions/setup-node@v4` (Node 20) y siguen funcionando sin cambios.
+
+**Por que no se migra ahora:** no es un breaking funcional hoy; `checkout@v4`
+sigue corriendo. Migrar a `checkout@v6` + Node 24 ahora agregaria churn a
+todos los repos sin beneficio inmediato. Se deja documentado para no perder la
+fecha limite.
+
+**Fecha limite real:** GitHub retira Node 20 de los runners hosteados el
+**16 de septiembre de 2026** — a partir de ahi, Actions que sigan en Node 20
+dejaran de correr. Antes de esa fecha hay que migrar `checkout@v4` -> `@v6`
+(y cualquier otra Action anclada a Node 20) en ambos templates.
+
+**Solucion aplicada:** no hay cambio de codigo ahora; se agrega este registro
+para que no se pierda hasta septiembre. El pin de `gitleaks-action` ya quedo
+en `e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0` (SHA verificado, firma
+GitHub verificada).
+
 ## Cosas que hay que verificar, no asumir, en cada repo nuevo
 
 1. `gh api repos/<owner>/<repo>/collaborators --jq '.[].login'` — no asumir

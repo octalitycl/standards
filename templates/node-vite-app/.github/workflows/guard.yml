@@ -27,7 +27,7 @@ jobs:
         run: |
           MSG=$(git log -1 --pretty=%B)
           echo "Last commit: $MSG"
-          if echo "$MSG" | grep -q "^Merge "; then
+          if echo "$MSG" | grep -Eq "^Merge pull request"; then
             echo "Merge commit via PR — permitido."
             exit 0
           fi
@@ -60,9 +60,15 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         run: |
           echo "Head: $HEAD_REF  Base: $BASE_REF"
-          if [ "$BASE_REF" = "main" ] && [ "$HEAD_REF" = "dev" ]; then
-            echo "Promocion dev -> main permitida."
-            exit 0
+          if [ "$BASE_REF" = "main" ]; then
+            if [ "$HEAD_REF" = "dev" ]; then
+              echo "Promocion dev -> main permitida."
+              exit 0
+            else
+              echo "::error::PRs a main solo se aceptan desde dev (promocion explicita)."
+              echo "Este PR es '$HEAD_REF' -> 'main'; debe apuntar a 'dev'."
+              exit 1
+            fi
           fi
           if echo "$HEAD_REF" | grep -q '^dependabot/'; then
             echo "Rama de Dependabot exenta de la convencion de nombres."
@@ -85,7 +91,7 @@ jobs:
             echo "::error::El titulo del PR no debe contener 'Co-authored-by' (rastro de IA bloqueado)."
             exit 1
           fi
-          if ! echo "$PR_TITLE" | grep -Eq '^(feat|fix|chore|docs|style|refactor|perf|test|build|ci)(\(.+\))?: .+'; then
+          if ! echo "$PR_TITLE" | grep -Eq '^(feat|fix|chore|docs|style|refactor|perf|test|build|ci)(\(.+\))?!?: .+'; then
             echo "::error::Titulo de PR invalido: '$PR_TITLE'"
             echo "Formato: type(scope): descripcion — type en {feat,fix,chore,docs,style,refactor,perf,test,build,ci}"
             exit 1
@@ -94,7 +100,9 @@ jobs:
 
       # c) commitlint sobre commits del PR
       - name: Commitlint
-        run: npx commitlint --from=origin/${{ github.base_ref }} --to=HEAD --verbose
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: npx commitlint --from=origin/$BASE_REF --to=HEAD --verbose
 
       # d) PR body min 20 chars
       - name: Validate PR body
