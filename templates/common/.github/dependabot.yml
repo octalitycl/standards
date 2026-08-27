@@ -1,0 +1,22 @@
+version: 2
+updates:
+  # Agregar el bloque de npm/pip/etc solo si el repo tiene el manifiesto correspondiente.
+  # - package-ecosystem: npm
+  #   directory: "/"
+  #   target-branch: dev   # NUNCA omitir esto: sin target-branch, Dependabot abre
+  #                        # PRs contra la rama default (main), no contra dev.
+  #   schedule:
+  #     interval: weekly
+  #     day: monday
+  #     time: "09:00"
+  #   open-pull-requests-limit: 5
+  #   labels: [dependencies, chore]
+  #   commit-message:
+  #     prefix: chore
+  #     include: scope
+  - package-ecosystem: github-actions
+    directory: "/"
+    target-branch: dev
+    schedule:
+      interval: weekly
+    labels: [dependencies, ci]

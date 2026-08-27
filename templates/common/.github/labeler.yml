@@ -1,0 +1,19 @@
+# Labeler — asigna labels segun archivos modificados
+# Usado por .github/workflows/auto-assign.yml (actions/labeler@v7)
+# Adaptar los globs a la estructura real del repo (esto es solo un punto de partida).
+
+"area:infra":
+  - changed-files:
+      - any-glob-to-any-file: [".github/**/*", "vercel.json", "package.json", "package-lock.json"]
+
+"ci":
+  - changed-files:
+      - any-glob-to-any-file: ".github/workflows/**/*"
+
+"dependencies":
+  - changed-files:
+      - any-glob-to-any-file: ["package.json", "package-lock.json"]
+
+"docs":
+  - changed-files:
+      - any-glob-to-any-file: ["*.md", ".github/*.md", ".github/ISSUE_TEMPLATE/**/*"]

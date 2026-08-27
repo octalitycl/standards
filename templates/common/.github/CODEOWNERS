@@ -1,0 +1,8 @@
+# CODEOWNERS — revision requerida segun archivo
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+# Nota: en repos privados Free de usuario el CODEOWNERS no bloquea merge nativamente;
+# el enforcement real lo hace .github/workflows/guard.yml. Cuando el repo pase a
+# Pro/Team u organizacion (o si ya es publico), activar branch protection con
+# "Require review from Code Owners".
+* {{TEAM}}
+.github/ {{OWNER_HANDLES}}

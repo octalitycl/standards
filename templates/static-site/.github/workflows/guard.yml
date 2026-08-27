@@ -1,0 +1,145 @@
+name: Guard
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: guard-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  no-direct-push:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Block direct push to protected branches
+        run: |
+          MSG=$(git log -1 --pretty=%B)
+          echo "Last commit: $MSG"
+          if echo "$MSG" | grep -Eq "^Merge pull request"; then
+            echo "Merge commit via PR — permitido."
+            exit 0
+          fi
+          echo "::error::Push directo bloqueado a '${{ github.ref_name }}'. Usa una rama feat/* y abre un PR."
+          echo "  - Para cambios a dev/main: crea rama feat/<descripcion> desde dev y abre PR contra dev."
+          echo "  - Promocion dev->main: PR de dev a main mergeado solo por el owner con 'Create a merge commit'."
+          exit 1
+
+  pr-rules:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # a) Branch name: feat|fix|chore|docs|style|refactor|perf|test|build|ci/<slug>
+      - name: Validate branch name
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          echo "Head: $HEAD_REF  Base: $BASE_REF"
+          if [ "$BASE_REF" = "main" ] && [ "$HEAD_REF" = "dev" ]; then
+            echo "Promocion dev -> main permitida."
+            exit 0
+          fi
+          if echo "$HEAD_REF" | grep -q '^dependabot/'; then
+            echo "Rama de Dependabot exenta de la convencion de nombres."
+            exit 0
+          fi
+          if ! echo "$HEAD_REF" | grep -Eq '^(feat|fix|chore|docs|style|refactor|perf|test|build|ci)/[a-z0-9._-]+$'; then
+            echo "::error::Nombre de rama invalido: '$HEAD_REF'"
+            echo "Formato requerido: ^(feat|fix|chore|docs|style|refactor|perf|test|build|ci)/[a-z0-9._-]+$"
+            exit 1
+          fi
+          echo "Branch name OK: $HEAD_REF"
+
+      # b) PR title conventional commits + rechazar Co-authored-by en titulo
+      - name: Validate PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "PR title: $PR_TITLE"
+          if echo "$PR_TITLE" | grep -qi "co-authored-by"; then
+            echo "::error::El titulo del PR no debe contener 'Co-authored-by' (rastro de IA bloqueado)."
+            exit 1
+          fi
+          if ! echo "$PR_TITLE" | grep -Eq '^(feat|fix|chore|docs|style|refactor|perf|test|build|ci)(\(.+\))?: .+'; then
+            echo "::error::Titulo de PR invalido: '$PR_TITLE'"
+            echo "Formato: type(scope): descripcion — type en {feat,fix,chore,docs,style,refactor,perf,test,build,ci}"
+            exit 1
+          fi
+          echo "PR title OK"
+
+      # c) Formato de commits del PR (regex Conventional Commits, sin depender de Node/commitlint)
+      - name: Validate commit messages
+        run: |
+          base="origin/${{ github.base_ref }}"
+          pattern='^(feat|fix|chore|docs|style|refactor|perf|test|build|ci|revert)(\(.+\))?!?: .+'
+          bad=0
+          for sha in $(git log "$base"..HEAD --no-merges --format="%H"); do
+            subject=$(git log -1 --pretty=%s "$sha")
+            if ! echo "$subject" | grep -Eq "$pattern"; then
+              echo "::error::Commit $sha no sigue Conventional Commits: '$subject'"
+              bad=1
+            fi
+          done
+          [ "$bad" -eq 0 ] || exit 1
+          echo "Commit messages OK"
+
+      # d) PR body min 20 chars
+      - name: Validate PR body
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          len=$(printf "%s" "$PR_BODY" | wc -c | tr -d ' ')
+          echo "PR body length: $len"
+          if [ "$len" -lt 20 ]; then
+            echo "::error::Descripcion del PR muy corta ($len chars). Minimo 20 caracteres."
+            exit 1
+          fi
+          echo "PR body OK ($len chars)"
+
+      # e) Bloquear Co-authored-by en commits del PR
+      - name: Block Co-authored-by in commits
+        run: |
+          base="origin/${{ github.base_ref }}"
+          offending=""
+          for sha in $(git log "$base"..HEAD --no-merges --format="%H"); do
+            if git show -s --format=%B "$sha" | grep -qi "co-authored-by"; then
+              offending="$offending $sha"
+              echo "  - $(git log -1 --pretty='%H %s' "$sha")"
+            fi
+          done
+          if [ -n "$offending" ]; then
+            echo "::error::Se detecto 'Co-authored-by' en los commits del PR."
+            exit 1
+          fi
+          echo "No Co-authored-by found — OK"
+
+  ownership-audit:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar que main lo mergeo el owner
+        env:
+          MERGED_BY: ${{ github.event.pull_request.merged_by.login }}
+        run: |
+          echo "Mergeado por: $MERGED_BY"
+          if [ "$MERGED_BY" != "{{OWNER}}" ]; then
+            echo "::error::PR a main mergeado por '$MERGED_BY', se esperaba '{{OWNER}}'. Detectado despues del hecho — GitHub Free no permite restringir el boton Merge a nivel nativo en repo privado."
+            exit 1
+          fi
+          echo "Ownership OK"

@@ -1,0 +1,19 @@
+# Auto-assign — configuracion para workflow auto-assign
+# Usado por .github/workflows/auto-assign.yml
+# Basado en kentaro-m/auto-assign: asigna reviewers automaticamente
+# Nota: en plan Free esto corre como Action; en Pro/Team o repo publico se
+# puede complementar con CODEOWNERS + branch protection nativa.
+
+addReviewers: true
+addAssignees: false
+
+# Numero de reviewers a asignar por PR (excluye al autor automaticamente)
+numberOfReviewers: 1
+
+# Pool de reviewers — cualquiera del equipo (guard.yml ya enforcea la regla de main)
+reviewers:
+  {{REVIEWERS_LIST}}
+
+# No asignar si el PR ya tiene reviewer o si es draft (controlado en workflow)
+filterLabels:
+  exclude: []
